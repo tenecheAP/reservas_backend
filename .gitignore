@@ -1,0 +1,36 @@
+# Archivos generados por Python
+*.pyc
+__pycache__/
+
+# Archivos de entorno virtual
+venv/
+.env
+
+# Archivos de logs
+*.log
+
+# Archivos de base de datos SQLite
+*.db
+
+# Archivos de configuración local
+config.py
+
+# Carpeta de dependencias
+lib/
+
+# Carpeta de construcción
+build/
+dist/
+
+# Carpeta de archivos temporales
+*.tmp
+
+# Archivos de caché
+*.cache
+
+# Archivos de respaldo
+*~
+
+# Archivos de configuración específicos del usuario
+.idea/
+.vscode/

@@ -13,7 +13,7 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # En producción, especifica los dominios permitidos
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["*"],  # Esto permite todos los métodos HTTP, incluyendo DELETE
     allow_headers=["*"],
 )
 
@@ -98,3 +98,15 @@ def leer_reserva(reserva_id: int, db: Session = Depends(get_db)):
     if db_reserva is None:
         raise HTTPException(status_code=404, detail="Reserva no encontrada")
     return db_reserva
+
+@app.delete("/reservas/{reserva_id}")
+async def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
+    try:
+        # Usar la función eliminar_reserva del módulo crud
+        resultado = crud.eliminar_reserva(db, reserva_id)
+        if resultado:
+            return {"message": f"Reserva {reserva_id} eliminada exitosamente"}
+        else:
+            raise HTTPException(status_code=404, detail="Reserva no encontrada")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))

@@ -45,12 +45,17 @@ def get_reserva(db: Session, reserva_id: int):
     return db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()
 
 def eliminar_reserva(db: Session, reserva_id: int):
-    reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()
-    if reserva:
-        db.delete(reserva)
-        db.commit()
-        return True
-    return False
+    try:
+        reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()
+        if reserva:
+            db.delete(reserva)
+            db.commit()
+            return True
+        return False
+    except Exception as e:
+        db.rollback()
+        print(f"Error al eliminar reserva: {str(e)}")
+        raise
 
 def modificar_reserva(db: Session, reserva_id: int, nueva_info: schemas.ReservaCreate):
     reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()

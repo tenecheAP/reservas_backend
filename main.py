@@ -110,3 +110,19 @@ async def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):
             raise HTTPException(status_code=404, detail="Reserva no encontrada")
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+@app.delete("/usuarios/{usuario_id}", tags=["usuarios"])
+def delete_usuario(usuario_id: int, db: Session = Depends(get_db)):
+    """
+    Elimina un usuario por su ID
+    """
+    try:
+        usuario = db.query(models.Usuario).filter(models.Usuario.id == usuario_id).first()
+        if usuario:
+            db.delete(usuario)
+            db.commit()
+            return {"message": f"Usuario {usuario_id} eliminado exitosamente"}
+        return {"message": "Usuario no encontrado"}
+    except Exception as e:
+        db.rollback()
+        return {"error": str(e)}

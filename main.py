@@ -1,22 +1,21 @@
-from fastapi import FastAPI, HTTPException, Depends, Request
-from fastapi.staticfiles import StaticFiles
-from fastapi.templating import Jinja2Templates
+from fastapi import FastAPI, HTTPException, Depends
+from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from typing import List
 from database import SessionLocal, engine
 import models, schemas, crud
-import logging
-
-# Configuración de logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-models.Base.metadata.create_all(bind=engine)
+from passlib.context import CryptContext
 
 app = FastAPI()
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-templates = Jinja2Templates(directory="static")
+# Configurar CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # En producción, especifica los dominios permitidos
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Dependency
 def get_db():
@@ -27,8 +26,40 @@ def get_db():
         db.close()
 
 @app.get("/")
-async def read_root(request: Request):
-    return templates.TemplateResponse("index.html", {"request": request})
+def read_root():
+    return {"message": "¡La API está en línea!"}
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# Nuevo endpoint para login
+@app.post("/usuarios/login")
+async def login(email: str, password: str, db: Session = Depends(get_db)):
+    try:
+        # Buscar usuario por email
+        usuario = crud.get_usuario_by_email(db, email=email)
+        print(f"Usuario encontrado: {usuario}")
+        print(f"Email recibido: {email}")
+        print(f"Contraseña recibida: {password}")
+        
+        if not usuario:
+            raise HTTPException(status_code=404, detail="Usuario no encontrado")
+        
+        # Verificar contraseña usando pwd_context.verify
+        verificacion = pwd_context.verify(password, usuario.hashed_password)
+        print(f"Resultado de verificación: {verificacion}")
+        
+        if not verificacion:
+            raise HTTPException(status_code=400, detail="Contraseña incorrecta")
+        
+        return {
+            "id": usuario.id, 
+            "email": usuario.email, 
+            "nombre": usuario.nombre,
+            "telefono": usuario.telefono
+        }
+    except Exception as e:
+        print(f"Error en login: {str(e)}")
+        raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/usuarios/", response_model=schemas.Usuario)
 def crear_usuario(usuario: schemas.UsuarioCreate, db: Session = Depends(get_db)):
@@ -54,7 +85,6 @@ def crear_reserva(reserva: schemas.ReservaCreate, db: Session = Depends(get_db))
     try:
         return crud.crear_reserva(db=db, reserva=reserva)
     except Exception as e:
-        logger.error(f"Error al crear reserva: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/reservas/", response_model=List[schemas.Reserva])

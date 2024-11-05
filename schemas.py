@@ -37,3 +37,13 @@ class Usuario(UsuarioBase):
 
     class Config:
         orm_mode = True
+
+class LoginData(BaseModel):
+    email: str
+    password: str
+
+class LoginResponse(BaseModel):
+    id: int
+    email: str
+    nombre: str
+    telefono: str

@@ -1,0 +1,63 @@
+[33mcommit 5dff5e3e1af85ab58e38d3a4f75b4e1001024964[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mdev_ElimReserva_BK[m[33m, [m[1;31morigin/dev_ElimReserva_BK[m[33m, [m[1;32mtemp_branch[m[33m)[m
+Author: PABLO ANDRES TENECHE LOPEZ <tenechepablo@gmail.com>
+Date:   Tue Nov 5 12:30:47 2024 -0500
+
+    ya se elimina reserva
+
+[1mdiff --git a/crud.py b/crud.py[m
+[1mindex a6042ff..e2dc7d8 100644[m
+[1m--- a/crud.py[m
+[1m+++ b/crud.py[m
+[36m@@ -45,12 +45,17 @@[m [mdef get_reserva(db: Session, reserva_id: int):[m
+     return db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()[m
+ [m
+ def eliminar_reserva(db: Session, reserva_id: int):[m
+[31m-    reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()[m
+[31m-    if reserva:[m
+[31m-        db.delete(reserva)[m
+[31m-        db.commit()[m
+[31m-        return True[m
+[31m-    return False[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()[m
+[32m+[m[32m        if reserva:[m
+[32m+[m[32m            db.delete(reserva)[m
+[32m+[m[32m            db.commit()[m
+[32m+[m[32m            return True[m
+[32m+[m[32m        return False[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        db.rollback()[m
+[32m+[m[32m        print(f"Error al eliminar reserva: {str(e)}")[m
+[32m+[m[32m        raise[m
+ [m
+ def modificar_reserva(db: Session, reserva_id: int, nueva_info: schemas.ReservaCreate):[m
+     reserva = db.query(models.Reserva).filter(models.Reserva.id == reserva_id).first()[m
+[1mdiff --git a/main.py b/main.py[m
+[1mindex 0c6f394..bc3aad3 100644[m
+[1m--- a/main.py[m
+[1m+++ b/main.py[m
+[36m@@ -13,7 +13,7 @@[m [mapp.add_middleware([m
+     CORSMiddleware,[m
+     allow_origins=["*"],  # En producción, especifica los dominios permitidos[m
+     allow_credentials=True,[m
+[31m-    allow_methods=["*"],[m
+[32m+[m[32m    allow_methods=["*"],  # Esto permite todos los métodos HTTP, incluyendo DELETE[m
+     allow_headers=["*"],[m
+ )[m
+ [m
+[36m@@ -98,3 +98,15 @@[m [mdef leer_reserva(reserva_id: int, db: Session = Depends(get_db)):[m
+     if db_reserva is None:[m
+         raise HTTPException(status_code=404, detail="Reserva no encontrada")[m
+     return db_reserva[m
+[32m+[m
+[32m+[m[32m@app.delete("/reservas/{reserva_id}")[m
+[32m+[m[32masync def eliminar_reserva(reserva_id: int, db: Session = Depends(get_db)):[m
+[32m+[m[32m    try:[m
+[32m+[m[32m        # Usar la función eliminar_reserva del módulo crud[m
+[32m+[m[32m        resultado = crud.eliminar_reserva(db, reserva_id)[m
+[32m+[m[32m        if resultado:[m
+[32m+[m[32m            return {"message": f"Reserva {reserva_id} eliminada exitosamente"}[m
+[32m+[m[32m        else:[m
+[32m+[m[32m            raise HTTPException(status_code=404, detail="Reserva no encontrada")[m
+[32m+[m[32m    except Exception as e:[m
+[32m+[m[32m        raise HTTPException(status_code=500, detail=str(e))[m
